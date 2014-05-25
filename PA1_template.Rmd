@@ -40,7 +40,7 @@
  The total number of missing values is `r missing`
  ```{r}
  
- # Fill NA's with average for that 5-min interval
+ # Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
  
  avgdaily[avgdaily$steps==max(avgdaily$steps),]
  colnames(avgdaily)[2] <- "avgint"
