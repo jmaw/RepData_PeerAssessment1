@@ -1,20 +1,74 @@
 # Reproducible Research: Peer Assessment 1
 
-
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+ ```{r}
+ library(plyr)
+ library(lattice)
+ ```{r}
+  
+ ## Loading and preprocessing the data
+ ```{r}
+ data <- read.csv("activity.csv", header=TRUE)
+ cleaned <- data[which(data$steps != "NA"), ]
+ ```
+ ## What is mean total number of steps taken per day?
+ ```{r}
+ 
+ daily <- ddply(cleaned, .(date), summarise, steps=sum(steps))
+ hist(daily$steps, main="Number of Steps", xlab="Total number of steps taken each day", col="green")
+ 
+ mn <- mean(daily$steps)
+ md <- median(daily$steps)
+ ```
+ The mean is `r mn` and the median is `r md`
+ 
+ ## What is the average daily activity pattern?
+ ```{r}
+ avgdaily <- ddply(cleaned, .(interval), summarise, steps=mean(steps))
+ plot(avgdaily$interval, avgdaily$steps, type="l", col="red", xlab="5-minute interval", ylab="Average number of steps taken",
+      main="Average daily activity pattern")
+ 
+ 
+ ```
+ ## Entering missing values
+ ```{r}
+ 
+ # Total number of missing values in the dataset
+ 
+ missing <- sum(is.na(data$steps))
+ ```
+ 
+ The total number of missing values is `r missing`
+ ```{r}
+ 
+ # Fill NA's with average for that 5-min interval
+ 
+ avgdaily[avgdaily$steps==max(avgdaily$steps),]
+ colnames(avgdaily)[2] <- "avgint"
+ merged <- arrange(join(data, avgdaily), interval)
+ 
+ # Create a new dataset that is equal to the original dataset but with the missing data filled in.
+ 
+ merged$steps[is.na(merged$steps)] <- merged$avgint[is.na(merged$steps)]
+ 
+ # Histogram
+ 
+ dailynew <- ddply(merged, .(date), summarise, steps=sum(steps))
+ hist(dailynew$steps, main="Number of Steps", xlab="Total number of steps taken each day", col="green",)
+ 
+ # mean and median total number of steps taken per day
+ 
+ mnnew <- mean(dailynew$steps)
+ mdnew <- median(dailynew$steps) 
+ ```
+ The new mean is `r mnnew` and the median is `r mdnew`
+ 
+ ## Are there differences in activity patterns between weekdays and weekends?
+ ```{r}
+ 
+ weekdays <- weekdays(as.Date(merged$date))
+ wddata <- transform(merged, day=weekdays)
+ wddata$wk <- ifelse(wddata$day %in% c("Saturday", "Sunday"),"weekend", "weekday")
+ avgwk <- ddply(wddata, .(interval, wk), summarise, steps=mean(steps))
+ 
+ xyplot(steps ~ interval | wk, data = avgwk, layout = c(1, 2), type="l" , col="red")
+ ```
